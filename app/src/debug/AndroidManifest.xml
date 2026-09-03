@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-build-only manifest fragment (Gradle merges this into the main manifest for
+    debug variants only - entirely absent from release builds). Adds an intent-filter
+    so an adb test script can hand MainActivity an existing video file directly,
+    bypassing the camera UI, e.g.:
+
+      adb shell am start -a com.omsharma.iykyk.DEBUG_PROCESS_VIDEO \
+        -d file:///storage/emulated/0/Android/data/com.omsharma.iykyk/files/test_videos/x.mp4 \
+        -n com.omsharma.iykyk/.MainActivity
+
+    See tools/eval/run_on_device.sh. MainActivity.kt still gates the actual
+    handling behind BuildConfig.DEBUG, since an explicit intent (one naming the
+    component via -n) bypasses intent-filter matching entirely - the filter here only
+    aids discoverability, the BuildConfig check is what actually keeps this out of
+    release behavior.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="com.omsharma.iykyk.DEBUG_PROCESS_VIDEO" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:mimeType="video/*" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -1,26 +1,30 @@
 package com.omsharma.iykyk.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.omsharma.iykyk.ui.screens.CaptureScreen
 import com.omsharma.iykyk.ui.screens.CollageScreen
-import com.omsharma.iykyk.ui.screens.ProcessingScreen
-import com.omsharma.iykyk.vm.FaceCollageViewModel
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    debugVideoUri: Uri? = null,
+    contentModifier: Modifier = Modifier
 ) {
-    // Obtained once here - called directly from MainActivity.setContent with no
-    // intervening NavBackStackEntry owner, so this resolves against the Activity's
-    // ViewModelStoreOwner and is shared for the app's lifetime. Passed down explicitly
-    // rather than each screen calling hiltViewModel() itself, which would scope to the
-    // individual destination and give each screen its own isolated instance.
-    val viewModel: FaceCollageViewModel = hiltViewModel()
+    // Debug hook: jump straight to processing
+    LaunchedEffect(debugVideoUri) {
+        if (debugVideoUri != null) {
+            navController.navigate(IykykScreens.CollageScreen.routeFor(debugVideoUri))
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -28,39 +32,23 @@ fun AppNavigation(
     ) {
         composable(route = IykykScreens.CaptureScreen.route) {
             CaptureScreen(
-                viewModel = viewModel,
-                onRecordingFinished = {
-                    navController.navigate(IykykScreens.ProcessingScreen.route)
+                onVideoReady = { uri ->
+                    navController.navigate(IykykScreens.CollageScreen.routeFor(uri))
                 }
             )
         }
 
-        composable(route = IykykScreens.ProcessingScreen.route) {
-            ProcessingScreen(
-                viewModel = viewModel,
-                onCollageReady = {
-                    navController.navigate(IykykScreens.CollageScreen.route) {
-                        // Remove the (now-succeeded) Processing entry so back-navigation
-                        // from Collage doesn't return to a stale completed screen.
-                        popUpTo(IykykScreens.ProcessingScreen.route) { inclusive = true }
-                    }
-                },
-                onRetry = {
-                    // Capture's existing back-stack entry is still there underneath -
-                    // just drop back to it rather than pushing a new one.
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(route = IykykScreens.CollageScreen.route) {
+        composable(
+            route = IykykScreens.CollageScreen.route,
+            arguments = listOf(navArgument("videoUri") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedUri = backStackEntry.arguments?.getString("videoUri").orEmpty()
             CollageScreen(
-                viewModel = viewModel,
-                onRecordAgain = {
-                    // Restart the whole flow with a clean back stack - Processing and
-                    // Collage's completed entries shouldn't linger for this new attempt.
+                videoUri = Uri.parse(Uri.decode(encodedUri)),
+                modifier = contentModifier,
+                onNewVideo = {
                     navController.navigate(IykykScreens.CaptureScreen.route) {
-                        popUpTo(IykykScreens.CaptureScreen.route) { inclusive = true }
+                        popUpTo(IykykScreens.CaptureScreen.route) { inclusive = true } // fresh start
                     }
                 }
             )
