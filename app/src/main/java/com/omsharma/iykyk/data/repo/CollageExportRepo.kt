@@ -1,5 +1,6 @@
 package com.omsharma.iykyk.data.repo
 
+import android.content.ClipData
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -30,7 +31,10 @@ class CollageExportRepo @Inject constructor(
 
     private fun insertIntoGallery(bitmap: Bitmap): Uri? {
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, "iykyk_collage_${System.currentTimeMillis()}.png")
+            put(
+                MediaStore.Images.Media.DISPLAY_NAME,
+                "iykyk_collage_${System.currentTimeMillis()}.png"
+            )
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/iykyk")
@@ -39,9 +43,11 @@ class CollageExportRepo @Inject constructor(
         }
 
         val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
+        val uri =
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
 
-        val written = resolver.openOutputStream(uri)?.use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) } ?: false
+        val written = resolver.openOutputStream(uri)
+            ?.use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) } ?: false
         if (!written) {
             resolver.delete(uri, null, null)
             return null
@@ -64,6 +70,7 @@ class CollageExportRepo @Inject constructor(
         Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newUri(context.contentResolver, "iykyk collage", uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
     }
