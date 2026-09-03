@@ -15,13 +15,20 @@ import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 
-// Gallery save and share sheet for a finished collage.
 class CollageExportRepo @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
 
-    // Insert into MediaStore Pictures; null on failure
+    // Save to gallery
     suspend fun saveToGallery(bitmap: Bitmap): Uri? = withContext(Dispatchers.IO) {
+        try {
+            insertIntoGallery(bitmap)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun insertIntoGallery(bitmap: Bitmap): Uri? {
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "iykyk_collage_${System.currentTimeMillis()}.png")
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
@@ -32,12 +39,12 @@ class CollageExportRepo @Inject constructor(
         }
 
         val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return@withContext null
+        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values) ?: return null
 
         val written = resolver.openOutputStream(uri)?.use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) } ?: false
         if (!written) {
             resolver.delete(uri, null, null)
-            return@withContext null
+            return null
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -45,10 +52,10 @@ class CollageExportRepo @Inject constructor(
             values.put(MediaStore.Images.Media.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
         }
-        uri
+        return uri
     }
 
-    // Share via a FileProvider uri in the cache dir
+    // Share
     suspend fun buildShareIntent(bitmap: Bitmap): Intent = withContext(Dispatchers.IO) {
         val file = File(context.cacheDir, "iykyk_collage_share.png")
         FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }

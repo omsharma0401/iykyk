@@ -6,8 +6,7 @@ import com.omsharma.iykyk.data.model.Person
 import com.omsharma.iykyk.utils.cosineSimilarity
 import javax.inject.Inject
 
-// Average-linkage clustering of appearances into people. Two appearances that overlap
-// in time can never be the same person, so such groups are never merged
+// Average-linkage clustering of appearances into people
 class IdentityClusterer @Inject constructor() {
 
     fun cluster(appearances: List<Appearance>): List<Person> {

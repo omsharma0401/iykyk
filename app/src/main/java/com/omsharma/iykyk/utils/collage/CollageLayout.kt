@@ -6,10 +6,8 @@ import com.omsharma.iykyk.constants.CollageSpec
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
-// Tile geometry for the collage
 object CollageLayout {
 
-    // Two columns, height capped so no tile is thinner than 9:16, grid centred vertically
     fun cells(count: Int): List<RectF> {
         val columns = if (count == 1) 1 else 2
         val rows = ceil(count / columns.toFloat()).toInt()
@@ -30,7 +28,6 @@ object CollageLayout {
         }
     }
 
-    // Largest region of the photo with the tile's aspect, face centred and at the upper third
     fun fitCrop(photoWidth: Int, photoHeight: Int, faceBox: Rect, aspect: Float): Rect {
         var cropWidth = photoWidth.toFloat()
         var cropHeight = cropWidth / aspect

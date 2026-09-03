@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
-// Samples a video at 3 fps as downscaled upright frames, on IO so decoding overlaps detection.
+// Samples a video at 3 fps as downscaled upright frames
 class FrameExtractor @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -39,7 +39,7 @@ class FrameExtractor @Inject constructor(
             val storedWidth = meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 1080
             val storedHeight = meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 1920
             val rotation = ((meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0) % 360 + 360) % 360
-            val sideways = rotation == 90 || rotation == 270 // phone recordings are stored sideways
+            val sideways = rotation == 90 || rotation == 270
             return VideoInfo(
                 width = if (sideways) storedHeight else storedWidth,
                 height = if (sideways) storedWidth else storedHeight,

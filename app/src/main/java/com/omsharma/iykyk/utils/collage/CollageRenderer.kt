@@ -17,21 +17,14 @@ object CollageRenderer {
 
     fun render(people: List<PersonResult>): Bitmap {
         require(people.isNotEmpty()) { "Nothing to render" }
-        val shown = mostSeen(people)
+        val shown = people
         val bitmap = Bitmap.createBitmap(CollageSpec.WIDTH, CollageSpec.HEIGHT, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawBackground(canvas)
-        drawHeader(canvas, people, shown.size)
+        drawHeader(canvas, people)
         val cells = CollageLayout.cells(shown.size)
         shown.forEachIndexed { index, person -> drawTile(canvas, person, cells[index]) }
         return bitmap
-    }
-
-    // At most MAX_TILES people
-    private fun mostSeen(people: List<PersonResult>): List<PersonResult> {
-        if (people.size <= CollageSpec.MAX_TILES) return people
-        val kept = people.sortedByDescending { it.appearanceCount }.take(CollageSpec.MAX_TILES).toSet()
-        return people.filter { it in kept }
     }
 
     private fun drawBackground(canvas: Canvas) {
@@ -41,15 +34,13 @@ object CollageRenderer {
         canvas.drawRect(0f, 0f, CollageSpec.WIDTH.toFloat(), CollageSpec.HEIGHT.toFloat(), paint)
     }
 
-    private fun drawHeader(canvas: Canvas, people: List<PersonResult>, shownCount: Int) {
+    private fun drawHeader(canvas: Canvas, people: List<PersonResult>) {
         val appearances = people.sumOf { it.appearanceCount }
         val title = if (people.size == 1) "1 person" else "${people.size} people"
-        val shown = if (shownCount < people.size) " · showing the $shownCount seen most" else ""
         canvas.drawText(title, CollageSpec.MARGIN, 96f, titlePaint)
-        canvas.drawText("$appearances appearances in this video$shown", CollageSpec.MARGIN, 142f, subtitlePaint)
+        canvas.drawText("$appearances appearances in this video", CollageSpec.MARGIN, 142f, subtitlePaint)
     }
 
-    // Photo cropped to the cell, bottom scrim, name and count
     private fun drawTile(canvas: Canvas, person: PersonResult, cell: RectF) {
         val clip = Path().apply { addRoundRect(cell, CollageSpec.CORNER_RADIUS, CollageSpec.CORNER_RADIUS, Path.Direction.CW) }
         canvas.save()

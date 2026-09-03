@@ -10,7 +10,6 @@ import com.omsharma.iykyk.constants.PipelineConfig
 import com.omsharma.iykyk.data.model.ExtractedFrame
 import com.omsharma.iykyk.utils.YuvToBitmap
 
-// Decodes the stream once with MediaCodec and converts only the sampled frames to bitmaps.
 class VideoDecoder(private val context: Context) {
 
     suspend fun decode(videoUri: Uri, video: VideoInfo, emit: suspend (ExtractedFrame) -> Unit) {
@@ -63,7 +62,6 @@ class VideoDecoder(private val context: Context) {
         }
     }
 
-    // Queue the next sample; true once the stream is exhausted
     private fun feedInput(codec: MediaCodec, extractor: MediaExtractor): Boolean {
         val inputIndex = codec.dequeueInputBuffer(TIMEOUT_US)
         if (inputIndex < 0) return false
@@ -80,6 +78,6 @@ class VideoDecoder(private val context: Context) {
 
     private companion object {
         const val TIMEOUT_US = 10_000L
-        const val HALF_FRAME_US = 18_000L // half a frame at 25-30 fps
+        const val HALF_FRAME_US = 18_000L
     }
 }

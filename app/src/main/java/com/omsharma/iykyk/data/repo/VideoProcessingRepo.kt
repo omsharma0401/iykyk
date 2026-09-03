@@ -40,7 +40,7 @@ class VideoProcessingRepo @Inject constructor(
 
     fun processVideo(videoUri: Uri): Flow<UiState<List<PersonResult>>> = flow {
         try {
-            emit(UiState.Loading(stage = ProcessingStage.PREHEATING.label, progress = 0f))
+            emit(UiState.Loading(stage = ProcessingStage.INITIALIZING.label, progress = 0f))
             val tracker = FaceTracker()
             val log = ObservationLog(context)
             val timing = StageTiming()
@@ -65,7 +65,7 @@ class VideoProcessingRepo @Inject constructor(
                     tracker.update(observations, frame.timestampUs)
                     frame.bitmap.recycle()
                     framesProcessed++
-                    emit(UiState.Loading(stage = ProcessingStage.COOKING.label, progress = (frame.frameIndex + 1f) / frame.frameCount))
+                    emit(UiState.Loading(stage = ProcessingStage.DETECTING_FACES.label, progress = (frame.frameIndex + 1f) / frame.frameCount))
                 }
 
             val appearances = tracker.finish()
@@ -74,10 +74,10 @@ class VideoProcessingRepo @Inject constructor(
                 return@flow
             }
 
-            emit(UiState.Loading(stage = ProcessingStage.SIMMERING.label, progress = 1f))
+            emit(UiState.Loading(stage = ProcessingStage.MATCHING_PEOPLE.label, progress = 1f))
             val people = identityClusterer.cluster(appearances)
 
-            emit(UiState.Loading(stage = ProcessingStage.PLATING.label, progress = 1f))
+            emit(UiState.Loading(stage = ProcessingStage.PICKING_BEST_SHOTS.label, progress = 1f))
             val pickStartNs = System.nanoTime()
             val results = representativePicker.pickAll(videoUri, people)
             timing.pickNs = System.nanoTime() - pickStartNs

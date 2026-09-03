@@ -11,7 +11,7 @@ fun cosineSimilarity(a: FloatArray, b: FloatArray): Float {
     return dot
 }
 
-// Weighted mean of unit vectors, re-normalised
+// Weighted mean of unit vectors
 fun meanEmbedding(embeddings: List<FloatArray>, weights: List<Float>): FloatArray {
     val mean = FloatArray(embeddings.first().size)
     for ((k, embedding) in embeddings.withIndex()) for (i in mean.indices) mean[i] += weights[k] * embedding[i]
@@ -20,6 +20,5 @@ fun meanEmbedding(embeddings: List<FloatArray>, weights: List<Float>): FloatArra
     return mean
 }
 
-// 1 facing the camera, 0 at 90 degrees
 fun frontalness(face: FaceDetection): Float =
     (cos(Math.toRadians(face.yawDegrees.toDouble())) * cos(Math.toRadians(face.pitchDegrees.toDouble()))).toFloat().coerceIn(0f, 1f)

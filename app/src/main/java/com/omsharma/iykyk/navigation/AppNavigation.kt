@@ -48,7 +48,9 @@ fun AppNavigation(
                 modifier = contentModifier,
                 onNewVideo = {
                     navController.navigate(IykykScreens.CaptureScreen.route) {
-                        popUpTo(IykykScreens.CaptureScreen.route) { inclusive = true } // fresh start
+                        popUpTo(IykykScreens.CaptureScreen.route) {
+                            inclusive = true
+                        } // fresh start
                     }
                 }
             )

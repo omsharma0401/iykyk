@@ -22,6 +22,10 @@ class CaptureViewModel @Inject constructor(
     private val _hasCameraPermission = MutableStateFlow(false)
     val hasCameraPermission = _hasCameraPermission.asStateFlow()
 
+    // True once the system will no longer show the permission dialog
+    private val _cameraPermissionBlocked = MutableStateFlow(false)
+    val cameraPermissionBlocked = _cameraPermissionBlocked.asStateFlow()
+
     private val _captureState = MutableStateFlow<UiState<Uri>>(UiState.Idle)
     val captureState = _captureState.asStateFlow()
 
@@ -41,8 +45,16 @@ class CaptureViewModel @Inject constructor(
         videoCaptureRepo.unbind()
     }
 
-    fun onPermissionResult(granted: Boolean) {
+    // Result of the permission dialog
+    fun onPermissionResult(granted: Boolean, canAskAgain: Boolean) {
         _hasCameraPermission.value = granted
+        _cameraPermissionBlocked.value = !granted && !canAskAgain
+    }
+
+    // Plain state check on resume; only a grant can clear a block
+    fun onPermissionChecked(granted: Boolean) {
+        _hasCameraPermission.value = granted
+        if (granted) _cameraPermissionBlocked.value = false
     }
 
     // Selfie toggle; the screen rebinds, the recording continues

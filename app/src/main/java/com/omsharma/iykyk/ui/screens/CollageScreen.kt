@@ -1,6 +1,12 @@
 package com.omsharma.iykyk.ui.screens
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.runtime.Composable
@@ -28,6 +34,16 @@ fun CollageScreen(
     val context = LocalContext.current
 
     LaunchedEffect(videoUri) { viewModel.startProcessing(videoUri) }
+
+    // Android 8 and 9 need the storage permission to write to the gallery; newer versions do not
+    val storagePermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) viewModel.saveCollage() else Toast.makeText(context, "Storage permission is needed to save", Toast.LENGTH_SHORT).show()
+    }
+    fun save() {
+        val needsPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        if (needsPermission) storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) else viewModel.saveCollage()
+    }
     LaunchedEffect(Unit) {
         viewModel.exportMessage.collect { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     }
@@ -38,7 +54,7 @@ fun CollageScreen(
     when (val state = processingState) {
         is UiState.Success -> CollageContent(
             collage = collage,
-            onSave = viewModel::saveCollage,
+            onSave = ::save,
             onShare = viewModel::shareCollage,
             onNewVideo = onNewVideo,
             modifier = modifier

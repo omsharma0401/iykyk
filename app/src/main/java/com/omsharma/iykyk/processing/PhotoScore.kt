@@ -23,7 +23,6 @@ object PhotoScore {
         return frontal * sharp * eyesOpen * smile * alone * naturalProportions(face) * headroom(observation)
     }
 
-    // 1 for normal proportions, lower for a squeezed split-screen face
     private fun naturalProportions(face: FaceDetection): Float {
         val leftEye = face.leftEye ?: return 1f
         val rightEye = face.rightEye ?: return 1f
@@ -34,7 +33,6 @@ object PhotoScore {
         return (eyeDistance / eyeToMouth / NATURAL_EYE_TO_MOUTH_RATIO).coerceIn(0f, 1f)
     }
 
-    // 1 when the face leaves room for shoulders, lower for an extreme close-up
     private fun headroom(observation: FaceObservation): Float {
         val faceToWidth = observation.detection.boundingBox.height().toFloat() / observation.frameWidth
         return (IDEAL_FACE_TO_FRAME_WIDTH / faceToWidth).coerceIn(0f, 1f)

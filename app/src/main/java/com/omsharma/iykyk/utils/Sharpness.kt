@@ -34,14 +34,14 @@ private fun toGrayscale(bitmap: Bitmap): IntArray {
     }
 }
 
-// Variance of the 4-neighbour Laplacian over interior pixels
 private fun laplacianVariance(gray: IntArray, width: Int, height: Int): Float {
     val responses = IntArray((width - 2) * (height - 2))
     var n = 0
     for (y in 1 until height - 1) {
         for (x in 1 until width - 1) {
             val i = y * width + x
-            responses[n++] = 4 * gray[i] - gray[i - width] - gray[i + width] - gray[i - 1] - gray[i + 1]
+            responses[n++] =
+                4 * gray[i] - gray[i - width] - gray[i + width] - gray[i - 1] - gray[i + 1]
         }
     }
     if (n == 0) return 0f

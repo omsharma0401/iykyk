@@ -13,7 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.omsharma.iykyk.ui.theme.AppDimensions
 
 // Loading indicator, quirky text wavy progress and a Cancel button
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -25,7 +25,7 @@ fun CookingLoader(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier.fillMaxSize().padding(AppDimensions.screenInset),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -33,14 +33,14 @@ fun CookingLoader(
         Text(
             text = stage ?: "Preheating…",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(top = 24.dp)
+            modifier = Modifier.padding(top = AppDimensions.xLarge)
         )
         if (progress != null) {
             LinearWavyProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().padding(top = 24.dp, start = 24.dp, end = 24.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = AppDimensions.xLarge, start = AppDimensions.screenInset, end = AppDimensions.screenInset)
             )
         }
-        IykykButton(text = "Cancel", onClick = onCancel, modifier = Modifier.padding(top = 32.dp), filled = false)
+        IykykButton(text = "Cancel", onClick = onCancel, modifier = Modifier.padding(top = AppDimensions.captureControlsBottomInset), filled = false)
     }
 }

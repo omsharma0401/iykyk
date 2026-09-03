@@ -9,9 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-
-private val BUTTON_SIZE = 52.dp
+import com.omsharma.iykyk.ui.theme.AppDimensions
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -25,7 +23,7 @@ fun CaptureIconButton(
     FilledIconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.size(BUTTON_SIZE),
+        modifier = modifier.size(AppDimensions.captureIconSize),
         shapes = IconButtonDefaults.shapes(),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = Color.White.copy(alpha = 0.2f),

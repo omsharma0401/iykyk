@@ -9,7 +9,6 @@ import com.omsharma.iykyk.ml.FaceEmbedder
 import com.omsharma.iykyk.utils.sharpness
 import javax.inject.Inject
 
-// Turns one frame's detections into embedded observations (a failing face is skipped, not the frame)
 class FaceObserver @Inject constructor(
     private val faceEmbedder: FaceEmbedder
 ) {

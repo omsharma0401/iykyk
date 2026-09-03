@@ -25,7 +25,6 @@ object YuvToBitmap {
             for (ox in 0 until outWidth) {
                 val ux = (ox * scaleX).toInt()
                 val uy = (oy * scaleY).toInt()
-                // Upright coordinate -> stored (rotated) frame coordinate
                 val sx: Int
                 val sy: Int
                 when (rotation) {

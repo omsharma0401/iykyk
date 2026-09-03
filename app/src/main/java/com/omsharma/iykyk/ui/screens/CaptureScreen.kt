@@ -4,9 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -15,6 +17,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,15 +39,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.omsharma.iykyk.state.UiState
-import com.omsharma.iykyk.ui.components.ShutterButton
 import com.omsharma.iykyk.ui.components.CaptureIconButton
+import com.omsharma.iykyk.ui.components.PermissionNotice
+import com.omsharma.iykyk.ui.components.ShutterButton
+import com.omsharma.iykyk.ui.theme.AppDimensions
 import com.omsharma.iykyk.vm.CaptureViewModel
 
 @Composable
@@ -57,6 +64,7 @@ fun CaptureScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val hasCameraPermission by viewModel.hasCameraPermission.collectAsStateWithLifecycle()
+    val cameraPermissionBlocked by viewModel.cameraPermissionBlocked.collectAsStateWithLifecycle()
     val captureState by viewModel.captureState.collectAsStateWithLifecycle()
     val recordingProgress by viewModel.recordingProgress.collectAsStateWithLifecycle()
     val lensFacing by viewModel.lensFacing.collectAsStateWithLifecycle()
@@ -71,10 +79,13 @@ fun CaptureScreen(
         onDispose { activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
     }
 
-    LaunchedEffect(Unit) {
-        viewModel.onPermissionResult(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                    PackageManager.PERMISSION_GRANTED
+    // Re-check on every resume, so turning the permission on in Settings takes effect on return
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onPermissionChecked(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -96,15 +107,40 @@ fun CaptureScreen(
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> viewModel.onPermissionResult(granted) }
+    ) { granted ->
+        // No rationale after a denial means the system has stopped asking
+        val activity = context.findActivity()
+        val canAskAgain = granted || activity == null ||
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.CAMERA
+                )
+        viewModel.onPermissionResult(granted, canAskAgain)
+    }
+
+    fun openAppSettings() {
+        context.startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", context.packageName, null)
+            )
+        )
+    }
 
     val videoPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> viewModel.onVideoPicked(uri) }
 
-    Box(modifier = modifier
-        .fillMaxSize()
-        .background(Color.Black)) {
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        // Wide phones keep roomy controls; narrow phones preserve space for the shutter button.
+        val controlsInset = (maxWidth * 0.08f).coerceIn(
+            AppDimensions.large,
+            AppDimensions.captureControlsInset
+        )
         if (hasCameraPermission) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
@@ -122,23 +158,31 @@ fun CaptureScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .safeContentPadding()
-                .padding(bottom = 32.dp),
+                .padding(bottom = AppDimensions.captureControlsBottomInset),
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            if (cameraPermissionBlocked) {
+                PermissionNotice(
+                    message = "Camera access is turned off. Turn it on to record; picking a video still works.",
+                    onOpenSettings = ::openAppSettings,
+                    modifier = Modifier.padding(bottom = AppDimensions.large)
+                )
+            }
+
             if (isRecording) {
                 Text(
                     text = "${secondsRemaining}s",
                     color = Color.White,
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = AppDimensions.large)
                 )
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
+                    .padding(horizontal = controlsInset),
                 contentAlignment = Alignment.Center
             ) {
                 CaptureIconButton(
@@ -165,10 +209,10 @@ fun CaptureScreen(
                     isRecording = isRecording,
                     progress = recordingProgress,
                     onClick = {
-                        if (!hasCameraPermission) {
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        } else {
-                            viewModel.onShutterTapped()
+                        when {
+                            hasCameraPermission -> viewModel.onShutterTapped()
+                            cameraPermissionBlocked -> openAppSettings()
+                            else -> cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                         }
                     }
                 )

@@ -4,7 +4,7 @@ import android.graphics.Rect
 import com.omsharma.iykyk.constants.PipelineConfig
 import com.omsharma.iykyk.data.model.FaceDetection
 
-// Cheap geometric checks before a face is worth embedding.
+// Cheap geometric checks before a face is worth embedding
 object FaceFilter {
 
     // Big enough and not cut off by the frame edge

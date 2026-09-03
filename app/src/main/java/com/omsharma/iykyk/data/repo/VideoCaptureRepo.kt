@@ -2,9 +2,11 @@ package com.omsharma.iykyk.data.repo
 
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.video.ExperimentalPersistentRecording
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -26,7 +28,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
-// CameraX preview + video capture. Callers unbind() when the capture UI leaves composition.
 class VideoCaptureRepo @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
@@ -35,14 +36,12 @@ class VideoCaptureRepo @Inject constructor(
     private var activeRecording: Recording? = null
     private var bound = false
 
-    // Created once and reused across binds so a persistent recording survives a camera switch
     private val recorder: Recorder by lazy {
         Recorder.Builder().setQualitySelector(QualitySelector.from(Quality.HD)).build()
     }
     private val videoCapture: VideoCapture<Recorder> by lazy { VideoCapture.withOutput(recorder) }
     private val preview: Preview by lazy { Preview.Builder().build() }
 
-    // Bind to the requested lens; falls back to the back camera
     fun bind(previewView: PreviewView, lifecycleOwner: LifecycleOwner, lensFacing: Int) {
         val providerFuture = ProcessCameraProvider.getInstance(context)
         providerFuture.addListener({
@@ -51,7 +50,8 @@ class VideoCaptureRepo @Inject constructor(
             preview.surfaceProvider = previewView.surfaceProvider
 
             val requested = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-            val selector = if (provider.hasCamera(requested)) requested else CameraSelector.DEFAULT_BACK_CAMERA
+            val selector =
+                if (provider.hasCamera(requested)) requested else CameraSelector.DEFAULT_BACK_CAMERA
 
             provider.unbindAll()
             provider.bindToLifecycle(lifecycleOwner, selector, preview, videoCapture)
@@ -64,7 +64,7 @@ class VideoCaptureRepo @Inject constructor(
         bound = false
     }
 
-    // Record until stopped or the 20 s limit. Loading carries seconds left + elapsed fraction.
+    @OptIn(ExperimentalPersistentRecording::class)
     fun startRecording(): Flow<UiState<Uri>> = callbackFlow {
         if (!bound) {
             trySend(UiState.Failed("Camera not ready yet"))
@@ -73,7 +73,6 @@ class VideoCaptureRepo @Inject constructor(
         }
         trySend(UiState.Loading(stage = "$TOTAL_RECORDING_SECONDS", progress = 0f))
 
-        // Private files dir, not cacheDir: a full phone purges the cache within seconds
         val outputFile = withContext(Dispatchers.IO) {
             val recordingsDir = File(context.filesDir, "recordings").apply { mkdirs() }
             recordingsDir.listFiles()?.forEach { it.delete() }
@@ -82,16 +81,21 @@ class VideoCaptureRepo @Inject constructor(
 
         activeRecording = recorder
             .prepareRecording(context, FileOutputOptions.Builder(outputFile).build())
-            .asPersistentRecording() // survives the selfie toggle
+            .asPersistentRecording()
             .start(ContextCompat.getMainExecutor(context)) { event ->
                 when (event) {
                     is VideoRecordEvent.Status -> {
-                        val elapsedMs = TimeUnit.NANOSECONDS.toMillis(event.recordingStats.recordedDurationNanos)
-                        val remainingSeconds = ((RECORDING_DURATION_MS - elapsedMs) / 1000L).coerceAtLeast(0)
+                        val elapsedMs =
+                            TimeUnit.NANOSECONDS.toMillis(event.recordingStats.recordedDurationNanos)
+                        val remainingSeconds =
+                            ((RECORDING_DURATION_MS - elapsedMs) / 1000L).coerceAtLeast(0)
                         trySend(
                             UiState.Loading(
                                 stage = "$remainingSeconds",
-                                progress = (elapsedMs.toFloat() / RECORDING_DURATION_MS).coerceIn(0f, 1f)
+                                progress = (elapsedMs.toFloat() / RECORDING_DURATION_MS).coerceIn(
+                                    0f,
+                                    1f
+                                )
                             )
                         )
                         if (elapsedMs >= RECORDING_DURATION_MS) activeRecording?.stop()

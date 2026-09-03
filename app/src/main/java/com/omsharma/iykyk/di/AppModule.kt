@@ -27,7 +27,7 @@ object AppModule {
     fun provideFaceDetector(): FaceDetector =
         FaceDetection.getClient(
             FaceDetectorOptions.Builder()
-                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE) // fast mode misses the small split-screen faces
+                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
                 .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
                 .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
                 .setMinFaceSize(PipelineConfig.MIN_FACE_WIDTH_RATIO)

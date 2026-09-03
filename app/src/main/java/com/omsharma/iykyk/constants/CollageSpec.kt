@@ -13,7 +13,6 @@ object CollageSpec {
     const val CAPTION_INSET = 26f
     const val PILL_HEIGHT = 48f
     const val PILL_PADDING = 16f
-    const val MAX_TILES = 6                      // more would become thumbnails
     const val MIN_TILE_ASPECT = 0.5f             // width / height; never thinner than 9:16
     const val FACE_LINE = 0.38f                  // face centre sits this far down the tile
     const val BACKGROUND_TOP = 0xFF15181F.toInt()

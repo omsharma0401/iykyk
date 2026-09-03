@@ -6,7 +6,7 @@ import com.omsharma.iykyk.BuildConfig
 import com.omsharma.iykyk.data.model.FaceObservation
 import java.io.File
 
-// Debug builds only: one JSON line per usable face, replayed offline by tools/eval.
+// Debug builds only: one JSON line per usable face, replayed offline by tools/eval
 class ObservationLog(context: Context) {
 
     private val file: File? =
