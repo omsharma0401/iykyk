@@ -114,3 +114,25 @@ Progress is exposed through `UiState.Loading` and drives the UI progress indicat
 `vm/` - screen state and user actions
 
 `constants/` - pipeline and collage configuration
+
+## 10. Build and Run
+
+Requirements: Android Studio with SDK 35, JDK 11 or newer, and a device or emulator running Android 8.0 (API 26) or newer.
+
+```bash
+./gradlew assembleDebug
+```
+
+Install the generated APK with `adb`, or run the `app` configuration directly from Android Studio. The app supports picking a video from the gallery; camera recording is included but not required to process a supplied video.
+
+## 11. Testing and Evaluation
+
+The pipeline can be checked against ground truth without eyeballing collages. A debug build logs every detected face to `observations.jsonl`; `tools/eval/analyze.py` replays tracking and clustering from that log and verifies the result against known appearance windows for each sample clip.
+
+```bash
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+./tools/eval/run_on_device.sh /path/to/sample1.mp4 sample1
+python3 tools/eval/analyze.py tools/eval/out/sample1/observations.jsonl --gt sample1
+```
+
+Full process details, including how the ground truth for each sample clip was established, are in [docs/TESTING_AND_EVALUATION.md](docs/TESTING_AND_EVALUATION.md) and [tools/eval/ground_truth.md](tools/eval/ground_truth.md).
